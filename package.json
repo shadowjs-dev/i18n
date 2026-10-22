@@ -1,0 +1,107 @@
+{
+  "name": "@shadow-js/i18n",
+  "version": "1.0.0",
+  "description": "Typed translations with ICU messages, lazy catalogs and server rendering that hydrates cleanly",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/cli.mjs"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "bin": {
+    "shadow-i18n": "./dist/cli.mjs"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/dev/index.d.ts",
+      "development": "./dist/dev/index.js",
+      "default": "./dist/prod/index.js"
+    },
+    "./server": {
+      "types": "./dist/dev/server.d.ts",
+      "development": "./dist/dev/server.js",
+      "default": "./dist/prod/server.js"
+    },
+    "./icu": {
+      "types": "./dist/dev/icu.d.ts",
+      "development": "./dist/dev/icu.js",
+      "default": "./dist/prod/icu.js"
+    },
+    "./format": {
+      "types": "./dist/dev/format.d.ts",
+      "development": "./dist/dev/format.js",
+      "default": "./dist/prod/format.js"
+    },
+    "./routing": {
+      "types": "./dist/dev/routing.d.ts",
+      "development": "./dist/dev/routing.js",
+      "default": "./dist/prod/routing.js"
+    },
+    "./persistence": {
+      "types": "./dist/dev/persistence.d.ts",
+      "development": "./dist/dev/persistence.js",
+      "default": "./dist/prod/persistence.js"
+    },
+    "./detect": {
+      "types": "./dist/dev/detect.d.ts",
+      "development": "./dist/dev/detect.js",
+      "default": "./dist/prod/detect.js"
+    },
+    "./full": {
+      "types": "./dist/dev/full.d.ts",
+      "development": "./dist/dev/full.js",
+      "default": "./dist/prod/full.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown --config-loader native",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test-types.json",
+    "lint": "biome check .",
+    "test": "vitest run --project unit --project dom --project server",
+    "test:gc": "vitest run --project gc --passWithNoTests",
+    "test:perf": "vitest run --project perf --passWithNoTests",
+    "check": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:perf && npm run test:gc"
+  },
+  "peerDependencies": {
+    "@shadow-js/core": "^1.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@shadow-js/compiler": "^1.0.0",
+    "@shadow-js/core": "^1.0.0",
+    "@shadow-js/router": "*",
+    "@shadow-js/testing": "^1.0.0",
+    "@shadow-js/web": "^1.0.0",
+    "@testing-library/dom": "10.4.2",
+    "@types/node": "^24.0.0",
+    "fast-check": "^4.10.2",
+    "happy-dom": "^21.0.3",
+    "tsdown": "0.23.0",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  },
+  "homepage": "https://i18n.shadowjs.net",
+  "keywords": [
+    "shadowjs",
+    "i18n"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shadowjs-dev/i18n.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shadowjs-dev/i18n/issues"
+  }
+}

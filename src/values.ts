@@ -124,11 +124,20 @@ const BUILTIN_DATE: Readonly<Record<string, "short" | "medium" | "long" | "full"
 });
 
 /**
+ * True for the values that can hold named arguments. A string passed by mistake has own properties
+ * (`length`, its indices) that `Object.hasOwn` would find, and `Reflect.get` throws on it: it is
+ * treated as no values at all.
+ */
+function isArgumentBag(values: unknown): values is object {
+  return (typeof values === "object" && values !== null) || typeof values === "function";
+}
+
+/**
  * Own-property lookup that cannot reach the prototype chain.
  * @internal
  */
 export function ownValue(values: object | undefined, name: string): unknown {
-  if (values === undefined) return undefined;
+  if (!isArgumentBag(values)) return undefined;
   return Object.hasOwn(values, name) ? Reflect.get(values, name) : undefined;
 }
 
@@ -137,7 +146,7 @@ export function ownValue(values: object | undefined, name: string): unknown {
  * @internal
  */
 export function hasOwn(values: object | undefined, name: string): boolean {
-  return values !== undefined && Object.hasOwn(values, name);
+  return isArgumentBag(values) && Object.hasOwn(values, name);
 }
 
 /**

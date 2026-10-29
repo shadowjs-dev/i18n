@@ -324,7 +324,7 @@ describe("malformed messages", () => {
     ["{n, plural, few2 {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
     ["{n, plural, =x {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
     ["{n, plural, = {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
-    ["{n, plural, =-1 {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
+    ["{n, plural, =--1 {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
     ["{n, plural, =1.5.5 {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
     ["{n, plural, =1234567890123456 {a} other {c}}", "INVALID_SELECTOR", 12, 1, 13],
     ["{n, select, {x} other {y}}", "INVALID_SELECTOR", 12, 1, 13],

@@ -33,7 +33,7 @@ export type Catalog = Record<string, unknown>;
  * Reads every `<locale>.json` of a folder.
  *
  * @param dir The messages folder.
- * @returns The catalogs by locale (the file name without `.json`), sorted by locale.
+ * @returns The catalogs by locale (the file name without `.json`), sorted by locale, in an object without a prototype.
  * @throws Error when the folder is missing, holds no catalog, or a file is not valid JSON (the message names the file).
  */
 export async function readCatalogs(dir: string): Promise<Record<string, Catalog>> {
@@ -44,7 +44,8 @@ export async function readCatalogs(dir: string): Promise<Record<string, Catalog>
     throw new Error(`the messages folder ${dir} cannot be read.`, { cause });
   }
   if (names.length === 0) throw new Error(`the messages folder ${dir} has no <locale>.json file.`);
-  const catalogs: Record<string, Catalog> = {};
+  // No prototype: a locale named `constructor` or `toString` (from `--base`) must not find a member of Object.prototype.
+  const catalogs: Record<string, Catalog> = Object.create(null);
   for (const name of names) {
     const file = join(dir, name);
     let parsed: unknown;
@@ -295,7 +296,7 @@ export async function exportXliff(options: {
 /** Sets a dotted key in a catalog, keeping the shape the file has: a flat key stays flat, nested objects are extended. */
 export function assignKey(catalog: Catalog, key: string, value: string): void {
   if (Object.hasOwn(catalog, key)) {
-    catalog[key] = value;
+    setOwn(catalog, key, value);
     return;
   }
   const parts = key.split(".");
@@ -307,11 +308,24 @@ export function assignKey(catalog: Catalog, key: string, value: string): void {
       at = next as Catalog;
     } else {
       const created: Catalog = {};
-      at[part] = created;
+      setOwn(at, part, created);
       at = created;
     }
   }
-  at[parts.at(-1) ?? key] = value;
+  setOwn(at, parts.at(-1) ?? key, value);
+}
+
+/**
+ * Writes an own data property. A plain assignment of `__proto__` would set the prototype instead
+ * (and drop the translation from the file), while the catalogs read from JSON hold it as data.
+ */
+function setOwn(target: Catalog, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
 }
 
 /** What {@link importXliff} did. */

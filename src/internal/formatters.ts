@@ -88,6 +88,22 @@ export function createFormatters<L extends string>(
     shared.report(new I18nError("FORMAT_FAILED", `unknown ${kind} format "${format}".`));
   };
 
+  /**
+   * The text shown for a value that cannot be formatted. An object may have no `toString`, or one
+   * that throws; a formatter must not throw for a bad value, so that case is reported and the kind
+   * of value is shown instead.
+   */
+  const shown = (value: unknown): string => {
+    try {
+      return String(value);
+    } catch (error) {
+      shared.report(
+        new I18nError("FORMAT_FAILED", `${describe(value)} has no text.`, { cause: error }),
+      );
+      return describe(value);
+    }
+  };
+
   const safely = <T>(label: string, fallback: T, run: () => T): T => {
     try {
       return run();
@@ -119,7 +135,7 @@ export function createFormatters<L extends string>(
       shared.report(
         new I18nError("INVALID_VALUE", `formatNumber needs a number, got ${describe(value)}.`),
       );
-      return String(value);
+      return shown(value);
     }
     return safely("formatNumber", String(numeric), () =>
       formatNumberValue(ctxOf(shared, active), numeric, numberOptions(format)),
@@ -136,7 +152,7 @@ export function createFormatters<L extends string>(
           `formatDate needs a Date, a timestamp or an ISO string, got ${describe(value)}.`,
         ),
       );
-      return String(value);
+      return shown(value);
     }
     return safely("formatDate", date.toISOString(), () =>
       formatDateValue(ctxOf(shared, active), date, dateOptions(format)),
@@ -161,7 +177,7 @@ export function createFormatters<L extends string>(
           }.`,
         ),
       );
-      return String(value);
+      return shown(value);
     }
     const seconds = (at - now) / 1000;
     const abs = Math.abs(seconds);

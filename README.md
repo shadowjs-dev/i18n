@@ -348,6 +348,48 @@ Types: `Translator`, `MessageKey`, `MessageArgs`, `MessageTags`, `Messages`, `Wi
 
 - [ShadowJS documentation](https://shadowjs.net): guides and the API reference.
 
+## Production error codes
+
+A production build keeps a short code instead of the development explanation, so message text never reaches user bundles. Search this table for the code. In the explanation, `…` stands for a value the development message names. A code followed by a word names the option, feature or member at fault.
+
+| Code | Development explanation |
+| --- | --- |
+| `I18N_CACHE` | createIntlCache: the capacity must be a whole number of at least 0, got …. / a cache size must be a finite number, got …. |
+| `I18N_CATALOG_1` | "…" is an accessor; catalogs hold plain data. |
+| `I18N_CATALOG_2` | "…" is nested deeper than …. / the catalog is nested deeper than 32. |
+| `I18N_CATALOG_3` | the key "…" is defined twice. |
+| `I18N_CATALOG_4` | "…" has an empty key. |
+| `I18N_CATALOG_5` | the catalog has more than … messages. |
+| `I18N_CATALOG_6` | a catalog must be an object. |
+| `I18N_CATALOG_7` | "…" must be a string or an object, got …. |
+| `I18N_COOKIE_1` | "…" is not a valid cookie attribute. |
+| `I18N_COOKIE_2` | maxAge must be a finite number of seconds, got …. |
+| `I18N_COOKIE_3` | "…" is not a valid cookie name. |
+| `I18N_COOKIE_4` | sameSite must be "lax", "strict" or "none", got …. |
+| `I18N_DEFAULT` | defaultLocale "…" is not in locales. |
+| `I18N_FEATURES` | the features option must be an array of features (for example [formatting]). |
+| `I18N_FEATURE_1` | features[…] is not an i18n feature: pass formatting, localeRouting, persistence or detection from their @shadow-js/i18n subpaths. |
+| `I18N_FEATURE_2` | … needs the … feature: import { … } from "@shadow-js/i18n/…" and pass createI18n({ features: […] }), or use createI18nFull from "@shadow-js/i18n/full". |
+| `I18N_FEATURE_3` | two different "…" features were passed. |
+| `I18N_LOADER_1` | the module for "…" has no default export. |
+| `I18N_LOADER_2` | the loader for "…" did not return an object. |
+| `I18N_LOCALE` | "…" is not one of the supported locales (…). |
+| `I18N_NO_1` | no i18n instance on this request; add createI18nMiddleware() to the middleware list. |
+| `I18N_NO_2` | useI18n() needs an <I18nProvider i18n={...}> above it. |
+| `I18N_ORIGIN_1` | "…" must be an http(s) URL. |
+| `I18N_ORIGIN_2` | "…" is not an absolute URL. |
+| `I18N_STATE_1` | the catalog for "…" must be an object. |
+| `I18N_STATE_2` | "…" is not a safe element id. |
+| `I18N_STATE_3` | the state is not valid JSON: … |
+| `I18N_STATE_4` | the catalog for "…" has more than … messages. |
+| `I18N_STATE_5` | the nonce contains unexpected characters. |
+| `I18N_STATE_6` | the state must be an object. |
+| `I18N_STATE_7` | the state is larger than … characters. |
+| `I18N_STATE_8` | "….…" must be a string. |
+| `I18N_STATE_9` | the hydration state is not a version 1 snapshot. / the state is not a version 1 snapshot. |
+
+The message reads `[shadow-i18n INVALID_STATE] I18N_STATE_1`: the first word is the stable `I18nError` code, the second the code of the exact problem. A `MessageSyntaxError` already says what is wrong with its `syntaxCode`.
+
 ## Dependencies
 
 - Runtime: none.

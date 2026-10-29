@@ -6,7 +6,7 @@ import { parseNumberSkeleton, SkeletonError } from "./number-skeleton";
 /**
  * Options of {@link parseMessage} (and of {@link icuCompile} and {@link icuCompiler}): the limits that
  * keep parsing linear and bounded, and whether tags are recognized. Every limit hit throws
- * `MessageSyntaxError`.
+ * `MessageSyntaxError`. A limit that is `NaN` counts as not given (it would otherwise switch the limit off).
  *
  * @example
  * ```ts
@@ -128,7 +128,10 @@ class Parser {
   count(): void {
     this.nodes += 1;
     if (this.nodes > this.maxNodes) {
-      this.fail("TOO_MANY_NODES", `the message has more than ${this.maxNodes} parts.`);
+      this.fail(
+        "TOO_MANY_NODES",
+        __DEV__ ? `the message has more than ${this.maxNodes} parts.` : "",
+      );
     }
   }
 
@@ -176,9 +179,16 @@ class Parser {
       } else if (character === "}") {
         if (mode === "case") break;
         if (mode === "tag") {
-          this.fail("UNCLOSED_TAG", `the tag <${tagName}> is not closed before this "}".`, openAt);
+          this.fail(
+            "UNCLOSED_TAG",
+            __DEV__ ? `the tag <${tagName}> is not closed before this "}".` : "",
+            openAt,
+          );
         }
-        this.fail("UNMATCHED_CLOSING_BRACE", "unexpected \"}\"; write '}' to print a brace.");
+        this.fail(
+          "UNMATCHED_CLOSING_BRACE",
+          __DEV__ ? "unexpected \"}\"; write '}' to print a brace." : "",
+        );
       } else if (character === "<" && this.tags) {
         const handled = this.parseTag(depth, inPlural, mode, tagName);
         if (handled === "literal") {
@@ -216,12 +226,12 @@ class Parser {
       if (mode === "case") {
         this.fail(
           "UNEXPECTED_END",
-          'the message ends before the closing "}" of this clause.',
+          __DEV__ ? 'the message ends before the closing "}" of this clause.' : "",
           openAt,
         );
       }
       if (mode === "tag") {
-        this.fail("UNCLOSED_TAG", `the tag <${tagName}> is never closed.`, openAt);
+        this.fail("UNCLOSED_TAG", __DEV__ ? `the tag <${tagName}> is never closed.` : "", openAt);
       }
     }
     return out;
@@ -289,9 +299,11 @@ class Parser {
       if (mode === "tag" && name === tagName) return "close";
       this.fail(
         "UNMATCHED_CLOSING_TAG",
-        mode === "tag"
-          ? `found </${name}> but <${tagName}> is still open.`
-          : `found </${name}> without a matching <${name}>.`,
+        __DEV__
+          ? mode === "tag"
+            ? `found </${name}> but <${tagName}> is still open.`
+            : `found </${name}> without a matching <${name}>.`
+          : "",
         start,
       );
     }
@@ -310,7 +322,11 @@ class Parser {
       return { kind: "tag", name, children: [], selfClosing: true };
     }
     if (depth + 1 > this.maxDepth) {
-      this.fail("NESTING_TOO_DEEP", `nesting is deeper than ${this.maxDepth}.`, start);
+      this.fail(
+        "NESTING_TOO_DEEP",
+        __DEV__ ? `nesting is deeper than ${this.maxDepth}.` : "",
+        start,
+      );
     }
     this.pos = cursor;
     const children = this.parseNodes(depth + 1, inPlural, "tag", name, start);
@@ -323,7 +339,11 @@ class Parser {
     const src = this.src;
     const open = this.pos;
     if (depth + 1 > this.maxDepth) {
-      this.fail("NESTING_TOO_DEEP", `nesting is deeper than ${this.maxDepth}.`, open);
+      this.fail(
+        "NESTING_TOO_DEEP",
+        __DEV__ ? `nesting is deeper than ${this.maxDepth}.` : "",
+        open,
+      );
     }
     this.count();
     this.pos += 1;
@@ -331,17 +351,22 @@ class Parser {
     const nameAt = this.pos;
     const name = this.readName();
     if (name === "" && this.pos >= src.length) {
-      this.fail("UNEXPECTED_END", "the argument is never closed.", open);
+      this.fail("UNEXPECTED_END", __DEV__ ? "the argument is never closed." : "", open);
     }
-    if (name === "") this.fail("INVALID_ARGUMENT_NAME", "an argument needs a name.", nameAt);
+    if (name === "")
+      this.fail("INVALID_ARGUMENT_NAME", __DEV__ ? "an argument needs a name." : "", nameAt);
     this.skipSpace();
-    if (this.pos >= src.length) this.fail("UNEXPECTED_END", "the argument is never closed.", open);
+    if (this.pos >= src.length)
+      this.fail("UNEXPECTED_END", __DEV__ ? "the argument is never closed." : "", open);
     if (src[this.pos] === "}") {
       this.pos += 1;
       return { kind: "argument", name };
     }
     if (src[this.pos] !== ",") {
-      this.fail("EXPECT_ARGUMENT_CLOSING_BRACE", 'expected "," or "}" after the argument name.');
+      this.fail(
+        "EXPECT_ARGUMENT_CLOSING_BRACE",
+        __DEV__ ? 'expected "," or "}" after the argument name.' : "",
+      );
     }
     this.pos += 1;
     this.skipSpace();
@@ -350,7 +375,7 @@ class Parser {
     const type = src.slice(typeAt, this.pos);
     this.skipSpace();
     if (type === "" && this.pos >= src.length) {
-      this.fail("UNEXPECTED_END", "the argument is never closed.", open);
+      this.fail("UNEXPECTED_END", __DEV__ ? "the argument is never closed." : "", open);
     }
     switch (type) {
       case "number":
@@ -365,7 +390,9 @@ class Parser {
       default:
         return this.fail(
           "INVALID_ARGUMENT_TYPE",
-          `"${type}" is not a supported argument type (number, date, time, plural, selectordinal, select).`,
+          __DEV__
+            ? `"${type}" is not a supported argument type (number, date, time, plural, selectordinal, select).`
+            : "",
           typeAt,
         );
     }
@@ -373,7 +400,8 @@ class Parser {
 
   parseFormatted(type: "number" | "date" | "time", name: string, open: number): MessageNode {
     const src = this.src;
-    if (this.pos >= src.length) this.fail("UNEXPECTED_END", "the argument is never closed.", open);
+    if (this.pos >= src.length)
+      this.fail("UNEXPECTED_END", __DEV__ ? "the argument is never closed." : "", open);
     let style: string | undefined;
     let skeleton:
       | ReturnType<typeof parseNumberSkeleton>
@@ -382,18 +410,26 @@ class Parser {
     if (src[this.pos] === ",") {
       this.pos += 1;
       const styleAt = this.pos;
+      // The style is unquoted as it is read, like message text: `'}'` is a brace, `''` an apostrophe.
+      let unquoted = "";
       while (this.pos < src.length && src[this.pos] !== "}") {
         if (src[this.pos] === "{") {
-          this.fail("INVALID_STYLE", "a style cannot contain braces.");
+          this.fail("INVALID_STYLE", __DEV__ ? "a style cannot contain braces." : "");
         }
-        this.pos += 1;
+        const next = src[this.pos + 1];
+        if (src[this.pos] === "'" && (next === "'" || next === "{" || next === "}")) {
+          unquoted += this.readApostrophe(false);
+        } else {
+          unquoted += src[this.pos];
+          this.pos += 1;
+        }
       }
       if (this.pos >= src.length) {
-        this.fail("UNEXPECTED_END", "the argument is never closed.", open);
+        this.fail("UNEXPECTED_END", __DEV__ ? "the argument is never closed." : "", open);
       }
       const rawStyle = src.slice(styleAt, this.pos);
-      style = rawStyle.trim();
-      if (style === "") this.fail("INVALID_STYLE", "the style is empty.", styleAt);
+      style = unquoted.trim();
+      if (style === "") this.fail("INVALID_STYLE", __DEV__ ? "the style is empty." : "", styleAt);
       // Errors point at the first character of the style, not at the white space before it.
       const styleStart = styleAt + (rawStyle.length - rawStyle.trimStart().length);
       if (style.startsWith("::")) {
@@ -411,7 +447,10 @@ class Parser {
       }
     }
     if (src[this.pos] !== "}") {
-      this.fail("EXPECT_ARGUMENT_CLOSING_BRACE", 'expected "}" to close the argument.');
+      this.fail(
+        "EXPECT_ARGUMENT_CLOSING_BRACE",
+        __DEV__ ? 'expected "}" to close the argument.' : "",
+      );
     }
     this.pos += 1;
     if (type === "number") {
@@ -440,8 +479,10 @@ class Parser {
     open: number,
   ): MessageNode {
     const src = this.src;
-    if (this.pos >= src.length) this.fail("UNEXPECTED_END", `the ${type} is never closed.`, open);
-    if (src[this.pos] !== ",") this.fail("EXPECT_COMMA", `expected "," after "${type}".`);
+    if (this.pos >= src.length)
+      this.fail("UNEXPECTED_END", __DEV__ ? `the ${type} is never closed.` : "", open);
+    if (src[this.pos] !== ",")
+      this.fail("EXPECT_COMMA", __DEV__ ? `expected "," after "${type}".` : "");
     this.pos += 1;
     this.skipSpace();
     let offset = 0;
@@ -450,10 +491,14 @@ class Parser {
       this.pos += 6;
       this.skipSpace();
       if (this.pos >= src.length) {
-        this.fail("UNEXPECTED_END", `the ${type} is never closed.`, open);
+        this.fail("UNEXPECTED_END", __DEV__ ? `the ${type} is never closed.` : "", open);
       }
       if (src[this.pos] !== ":") {
-        this.fail("INVALID_OFFSET", 'expected "offset:" followed by a number.', offsetAt);
+        this.fail(
+          "INVALID_OFFSET",
+          __DEV__ ? 'expected "offset:" followed by a number.' : "",
+          offsetAt,
+        );
       }
       this.pos += 1;
       this.skipSpace();
@@ -466,7 +511,7 @@ class Parser {
         this.pos += 1;
       }
       if (this.pos === digitsAt && this.pos >= src.length) {
-        this.fail("UNEXPECTED_END", `the ${type} is never closed.`, open);
+        this.fail("UNEXPECTED_END", __DEV__ ? `the ${type} is never closed.` : "", open);
       }
       if (
         this.pos === digitsAt ||
@@ -475,7 +520,7 @@ class Parser {
       ) {
         this.fail(
           "INVALID_OFFSET",
-          "the offset must be a whole number of at most 9 digits.",
+          __DEV__ ? "the offset must be a whole number of at most 9 digits." : "",
           digitsAt,
         );
       }
@@ -486,7 +531,8 @@ class Parser {
     const bodyPlural = inPlural || type !== "select";
     for (;;) {
       this.skipSpace();
-      if (this.pos >= src.length) this.fail("UNEXPECTED_END", `the ${type} is never closed.`, open);
+      if (this.pos >= src.length)
+        this.fail("UNEXPECTED_END", __DEV__ ? `the ${type} is never closed.` : "", open);
       if (src[this.pos] === "}") break;
       const selectorAt = this.pos;
       while (this.pos < src.length) {
@@ -496,21 +542,28 @@ class Parser {
       }
       const selector = src.slice(selectorAt, this.pos);
       if (selector === "")
-        this.fail("INVALID_SELECTOR", "expected a selector such as one, other or =0.", selectorAt);
+        this.fail(
+          "INVALID_SELECTOR",
+          __DEV__ ? "expected a selector such as one, other or =0." : "",
+          selectorAt,
+        );
       if (type !== "select") this.checkPluralSelector(selector, selectorAt);
       if (seen.has(selector))
-        this.fail("DUPLICATE_SELECTOR", `"${selector}" appears twice.`, selectorAt);
+        this.fail("DUPLICATE_SELECTOR", __DEV__ ? `"${selector}" appears twice.` : "", selectorAt);
       seen.add(selector);
       this.skipSpace();
       if (this.pos >= src.length) {
-        this.fail("UNEXPECTED_END", `the ${type} is never closed.`, open);
+        this.fail("UNEXPECTED_END", __DEV__ ? `the ${type} is never closed.` : "", open);
       }
       if (src[this.pos] !== "{") {
-        this.fail("EXPECT_CASE_OPENING_BRACE", `expected "{" after the selector "${selector}".`);
+        this.fail(
+          "EXPECT_CASE_OPENING_BRACE",
+          __DEV__ ? `expected "{" after the selector "${selector}".` : "",
+        );
       }
       this.count();
       if (depth + 2 > this.maxDepth) {
-        this.fail("NESTING_TOO_DEEP", `nesting is deeper than ${this.maxDepth}.`);
+        this.fail("NESTING_TOO_DEEP", __DEV__ ? `nesting is deeper than ${this.maxDepth}.` : "");
       }
       this.pos += 1;
       const body = this.parseNodes(depth + 2, bodyPlural, "case", "", this.pos - 1);
@@ -519,9 +572,9 @@ class Parser {
     }
     this.pos += 1;
     if (cases.length === 0)
-      this.fail("EXPECT_CASES", `the ${type} needs at least an "other" case.`, open);
+      this.fail("EXPECT_CASES", __DEV__ ? `the ${type} needs at least an "other" case.` : "", open);
     if (!seen.has("other"))
-      this.fail("MISSING_OTHER_CLAUSE", `the ${type} needs an "other" case.`, open);
+      this.fail("MISSING_OTHER_CLAUSE", __DEV__ ? `the ${type} needs an "other" case.` : "", open);
     if (type === "select") return { kind: "select", name, cases };
     return { kind: "plural", name, ordinal: type === "selectordinal", offset, cases };
   }
@@ -529,7 +582,8 @@ class Parser {
   checkPluralSelector(selector: string, at: number): void {
     if (PLURAL_KEYWORDS.has(selector)) return;
     if (selector.startsWith("=")) {
-      const digits = selector.slice(1);
+      // ICU allows a negative value (`=-1`); the sign is not one of the 15 digits.
+      const digits = selector.startsWith("=-") ? selector.slice(2) : selector.slice(1);
       let dot = -1;
       let valid = digits.length > 0 && digits.length <= 15;
       for (let index = 0; valid && index < digits.length; index += 1) {
@@ -541,10 +595,20 @@ class Parser {
     }
     this.fail(
       "INVALID_SELECTOR",
-      `"${selector}" is not a plural selector (zero, one, two, few, many, other or =N).`,
+      __DEV__
+        ? `"${selector}" is not a plural selector (zero, one, two, few, many, other or =N).`
+        : "",
       at,
     );
   }
+}
+
+/**
+ * A limit from the options. `NaN` (an unparsed environment variable, say) makes every comparison
+ * with it false, which would turn the limit off; it means the default instead.
+ */
+function limitOf(given: number | undefined, fallback: number): number {
+  return given === undefined || Number.isNaN(given) ? fallback : given;
 }
 
 /**
@@ -591,11 +655,11 @@ class Parser {
  * @since 1.0.0
  */
 export function parseMessage(source: string, options: ParseOptions = {}): readonly MessageNode[] {
-  const maxLength = options.maxLength ?? PARSE_LIMITS.maxLength;
+  const maxLength = limitOf(options.maxLength, PARSE_LIMITS.maxLength);
   if (source.length > maxLength) {
     throw new MessageSyntaxError(
       "MESSAGE_TOO_LONG",
-      `the message has ${source.length} characters; the limit is ${maxLength}.`,
+      __DEV__ ? `the message has ${source.length} characters; the limit is ${maxLength}.` : "",
       source.slice(0, 80),
       0,
     );
@@ -603,8 +667,8 @@ export function parseMessage(source: string, options: ParseOptions = {}): readon
   const parser = new Parser(
     source,
     // The parser recurses once per nesting level; the ceiling keeps the stack small whatever is asked.
-    Math.min(options.maxDepth ?? PARSE_LIMITS.maxDepth, PARSE_LIMITS.maxDepthCeiling),
-    options.maxNodes ?? PARSE_LIMITS.maxNodes,
+    Math.min(limitOf(options.maxDepth, PARSE_LIMITS.maxDepth), PARSE_LIMITS.maxDepthCeiling),
+    limitOf(options.maxNodes, PARSE_LIMITS.maxNodes),
     options.tags ?? true,
   );
   return parser.parseNodes(0, false, "root", "", 0);

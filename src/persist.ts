@@ -31,9 +31,9 @@ import { I18nError } from "./errors";
  * @since 1.0.0
  */
 export interface PersistStrategy {
-  /** The remembered locale, or `undefined` when there is none. Must not throw. */
+  /** The remembered locale, or `undefined` when there is none. Must not throw. Runs untracked: what it reads is not subscribed. */
   read(): string | undefined;
-  /** Remembers `locale`. Must not throw. */
+  /** Remembers `locale`. Must not throw. Runs untracked, even when `setLocale` is called inside a computation. */
   write(locale: string): void;
 }
 
@@ -243,25 +243,33 @@ function globalValue(name: string, report: ((error: I18nError) => void) | undefi
 export function cookieStrategy(options: CookieStrategyOptions = {}): PersistStrategy {
   const name = options.name ?? "locale";
   if (!COOKIE_NAME.test(name)) {
-    throw new I18nError("INVALID_VALUE", `"${name}" is not a valid cookie name.`);
+    throw new I18nError(
+      "INVALID_VALUE",
+      __DEV__ ? `"${name}" is not a valid cookie name.` : "I18N_COOKIE_3",
+    );
   }
   const path = options.path ?? "/";
   for (const value of [options.domain, path]) {
     if (value !== undefined && !COOKIE_ATTR.test(value))
-      throw new I18nError("INVALID_VALUE", `"${value}" is not a valid cookie attribute.`);
+      throw new I18nError(
+        "INVALID_VALUE",
+        __DEV__ ? `"${value}" is not a valid cookie attribute.` : "I18N_COOKIE_1",
+      );
   }
   const sameSite = options.sameSite ?? "lax";
   if (sameSite !== "lax" && sameSite !== "strict" && sameSite !== "none") {
     throw new I18nError(
       "INVALID_VALUE",
-      `sameSite must be "lax", "strict" or "none", got ${JSON.stringify(sameSite)}.`,
+      __DEV__
+        ? `sameSite must be "lax", "strict" or "none", got ${JSON.stringify(sameSite)}.`
+        : "I18N_COOKIE_4",
     );
   }
   const maxAge = options.maxAge ?? 31_536_000;
   if (!Number.isFinite(maxAge)) {
     throw new I18nError(
       "INVALID_VALUE",
-      `maxAge must be a finite number of seconds, got ${maxAge}.`,
+      __DEV__ ? `maxAge must be a finite number of seconds, got ${maxAge}.` : "I18N_COOKIE_2",
     );
   }
   const documentOf = (): CookieDocument | undefined =>

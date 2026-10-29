@@ -5,7 +5,7 @@ description: "Work with @shadow-js/i18n. Typed translations with ICU messages, l
 
 # @shadow-js/i18n
 
-Version 1.0.1. Typed translations with ICU messages, lazy catalogs and server rendering that hydrates cleanly.
+Version 1.0.2. Typed translations with ICU messages, lazy catalogs and server rendering that hydrates cleanly.
 
 ## Where to read more
 
@@ -23,7 +23,7 @@ npm install @shadow-js/i18n @shadow-js/core
 
 | Package | Range | Required |
 | --- | --- | --- |
-| `@shadow-js/core` | `^1.0.1` | yes |
+| `@shadow-js/core` | `^1.0.2` | yes |
 
 ## Import paths
 

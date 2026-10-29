@@ -286,7 +286,10 @@ export function createLocaleRouting<L extends string>(
   const { locales, defaultLocale } = options;
   const prefix = options.prefix ?? "as-needed";
   if (!locales.includes(defaultLocale)) {
-    throw new I18nError("UNKNOWN_LOCALE", `defaultLocale "${defaultLocale}" is not in locales.`);
+    throw new I18nError(
+      "UNKNOWN_LOCALE",
+      __DEV__ ? `defaultLocale "${defaultLocale}" is not in locales.` : "I18N_DEFAULT",
+    );
   }
   const byLower = new Map<string, L>();
   for (const locale of locales) byLower.set(locale.toLowerCase(), locale);
@@ -353,14 +356,21 @@ export function createLocaleRouting<L extends string>(
         base = new URL(origin);
       } catch (error) {
         if (error instanceof TypeError) {
-          throw new I18nError("INVALID_VALUE", `"${origin}" is not an absolute URL.`, {
-            cause: error,
-          });
+          throw new I18nError(
+            "INVALID_VALUE",
+            __DEV__ ? `"${origin}" is not an absolute URL.` : "I18N_ORIGIN_2",
+            {
+              cause: error,
+            },
+          );
         }
         throw error;
       }
       if (base.protocol !== "http:" && base.protocol !== "https:") {
-        throw new I18nError("INVALID_VALUE", `"${origin}" must be an http(s) URL.`);
+        throw new I18nError(
+          "INVALID_VALUE",
+          __DEV__ ? `"${origin}" must be an http(s) URL.` : "I18N_ORIGIN_1",
+        );
       }
       const root = base.origin;
       const list: Alternate[] = locales.map((locale) => ({

@@ -134,7 +134,10 @@ export function createI18n<
 >(options: I18nOptions<L, D, Mg, Ld>): I18n<L, BaseCatalog<Mg, Ld, D>> {
   const { locales, defaultLocale } = options;
   if (!locales.includes(defaultLocale)) {
-    throw new I18nError("UNKNOWN_LOCALE", `defaultLocale "${defaultLocale}" is not in locales.`);
+    throw new I18nError(
+      "UNKNOWN_LOCALE",
+      __DEV__ ? `defaultLocale "${defaultLocale}" is not in locales.` : "I18N_DEFAULT",
+    );
   }
   // Every option that needs a feature is checked here, before anything is created, on the server
   // and in the browser alike: a missing feature fails the same way everywhere.
@@ -294,9 +297,15 @@ function makeInstance<L extends string>(
       state === null ||
       typeof state !== "object" ||
       state.v !== 1 ||
-      typeof state.locale !== "string"
+      typeof state.locale !== "string" ||
+      typeof state.messages !== "object" ||
+      state.messages === null ||
+      Array.isArray(state.messages)
     ) {
-      throw new I18nError("INVALID_STATE", "the hydration state is not a version 1 snapshot.");
+      throw new I18nError(
+        "INVALID_STATE",
+        __DEV__ ? "the hydration state is not a version 1 snapshot." : "I18N_STATE_9",
+      );
     }
     const next = resolveLocale(shared, state.locale);
     // Every catalog is checked before the first write, so a malformed snapshot changes nothing.
@@ -397,7 +406,8 @@ function makeInstance<L extends string>(
 
   const suspendIfLoading = (active: L): boolean => {
     if (isChainLoaded(shared, active)) return false;
-    if (!isServer && getOwner() !== null) {
+    // After dispose no load runs, so nothing would ever release the holder.
+    if (!isServer && !shared.disposed && getOwner() !== null) {
       const tracker = useContext(SuspenseContext);
       if (tracker !== null && !shared.holders.has(tracker)) {
         shared.holders.add(tracker);

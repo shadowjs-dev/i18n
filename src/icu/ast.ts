@@ -83,7 +83,8 @@ export interface NumberNode {
   /** The argument name. */
   readonly name: string;
   /**
-   * The trimmed text after the second comma: a named style (`integer`, `percent`, or a key of the
+   * The trimmed text after the second comma, unquoted like message text (`'}'` is a brace, `''` an apostrophe, so a
+   * style may hold a brace written in quotes): a named style (`integer`, `percent`, or a key of the
    * `number` formats) or a `::` skeleton. `undefined` when the argument has no style, which formats
    * with the locale's default number format.
    */
@@ -149,7 +150,7 @@ export interface DateTimeNode {
 export interface MessageCase {
   /**
    * The selector as written. In a plural or selectordinal it is `zero`, `one`, `two`, `few`,
-   * `many`, `other` or `=N` (an exact value: digits with at most one inner `.`, up to 15
+   * `many`, `other` or `=N` (an exact value: an optional `-`, then digits with at most one inner `.`, up to 15
    * characters). In a select it is any word without white space or braces.
    */
   readonly selector: string;

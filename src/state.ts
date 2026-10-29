@@ -101,7 +101,7 @@ export function parseI18nState(text: string): I18nState {
   if (text.length > STATE_MAX_LENGTH) {
     throw new I18nError(
       "INVALID_STATE",
-      `the state is larger than ${STATE_MAX_LENGTH} characters.`,
+      __DEV__ ? `the state is larger than ${STATE_MAX_LENGTH} characters.` : "I18N_STATE_7",
     );
   }
   let value: unknown;
@@ -109,14 +109,18 @@ export function parseI18nState(text: string): I18nState {
     value = JSON.parse(text);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new I18nError("INVALID_STATE", `the state is not valid JSON: ${error.message}`, {
-        cause: error,
-      });
+      throw new I18nError(
+        "INVALID_STATE",
+        __DEV__ ? `the state is not valid JSON: ${error.message}` : "I18N_STATE_3",
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }
   if (typeof value !== "object" || value === null) {
-    throw new I18nError("INVALID_STATE", "the state must be an object.");
+    throw new I18nError("INVALID_STATE", __DEV__ ? "the state must be an object." : "I18N_STATE_6");
   }
   const locale = Reflect.get(value, "locale");
   const messages = Reflect.get(value, "messages");
@@ -127,23 +131,34 @@ export function parseI18nState(text: string): I18nState {
     messages === null ||
     Array.isArray(messages)
   ) {
-    throw new I18nError("INVALID_STATE", "the state is not a version 1 snapshot.");
+    throw new I18nError(
+      "INVALID_STATE",
+      __DEV__ ? "the state is not a version 1 snapshot." : "I18N_STATE_9",
+    );
   }
   for (const code of Object.keys(messages)) {
     const catalog = Object.getOwnPropertyDescriptor(messages, code)?.value;
     if (typeof catalog !== "object" || catalog === null || Array.isArray(catalog)) {
-      throw new I18nError("INVALID_STATE", `the catalog for "${code}" must be an object.`);
+      throw new I18nError(
+        "INVALID_STATE",
+        __DEV__ ? `the catalog for "${code}" must be an object.` : "I18N_STATE_1",
+      );
     }
     const keys = Object.keys(catalog);
     if (keys.length > CATALOG_LIMITS.maxKeys) {
       throw new I18nError(
         "INVALID_STATE",
-        `the catalog for "${code}" has more than ${CATALOG_LIMITS.maxKeys} messages.`,
+        __DEV__
+          ? `the catalog for "${code}" has more than ${CATALOG_LIMITS.maxKeys} messages.`
+          : "I18N_STATE_4",
       );
     }
     for (const key of keys) {
       if (typeof Object.getOwnPropertyDescriptor(catalog, key)?.value !== "string") {
-        throw new I18nError("INVALID_STATE", `"${code}.${key}" must be a string.`);
+        throw new I18nError(
+          "INVALID_STATE",
+          __DEV__ ? `"${code}.${key}" must be a string.` : "I18N_STATE_8",
+        );
       }
     }
   }
@@ -201,9 +216,15 @@ export interface StateScriptOptions {
 export function renderI18nStateScript(state: I18nState, options: StateScriptOptions = {}): string {
   const id = options.id ?? STATE_SCRIPT_ID;
   if (!SAFE_TOKEN.test(id))
-    throw new I18nError("INVALID_VALUE", `"${id}" is not a safe element id.`);
+    throw new I18nError(
+      "INVALID_VALUE",
+      __DEV__ ? `"${id}" is not a safe element id.` : "I18N_STATE_2",
+    );
   if (options.nonce !== undefined && !SAFE_TOKEN.test(options.nonce)) {
-    throw new I18nError("INVALID_VALUE", "the nonce contains unexpected characters.");
+    throw new I18nError(
+      "INVALID_VALUE",
+      __DEV__ ? "the nonce contains unexpected characters." : "I18N_STATE_5",
+    );
   }
   const nonce = options.nonce === undefined ? "" : ` nonce="${options.nonce}"`;
   return `<script type="application/json" id="${id}"${nonce}>${serializeI18nState(state)}</script>`;

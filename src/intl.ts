@@ -152,7 +152,9 @@ export function createIntlCache(capacity: number = INTL_CACHE_SIZE): IntlCache {
   if (!Number.isSafeInteger(capacity) || capacity < 0) {
     throw new I18nError(
       "INVALID_VALUE",
-      `createIntlCache: the capacity must be a whole number of at least 0, got ${String(capacity)}.`,
+      __DEV__
+        ? `createIntlCache: the capacity must be a whole number of at least 0, got ${String(capacity)}.`
+        : "I18N_CACHE",
     );
   }
   const store = new Map<string, unknown>();

@@ -193,17 +193,34 @@ function matchIn<L extends string>(index: LocaleIndex<L>, tag: string): L | unde
     parts.pop();
   }
   const language = canonical.split("-")[0]?.toLowerCase() ?? "";
+  // Several locales may share the language: a request without a script (`zh-TW`) names the script its
+  // region implies (Hant), and must not land on whichever of `zh-Hans` and `zh-Hant` comes first.
+  const wanted = scriptOf(canonical);
+  let first: L | undefined;
   for (const [candidate, locale] of index.plain) {
-    if (candidate.split("-")[0] === language) return locale;
+    if (candidate.split("-")[0] !== language) continue;
+    if (wanted !== undefined && scriptOf(candidate) === wanted) return locale;
+    first ??= locale;
   }
-  return undefined;
+  return first;
+}
+
+/** The script of a tag, written or implied by its language and region (`zh-TW` -> `Hant`); `undefined` when unknown. */
+function scriptOf(tag: string): string | undefined {
+  try {
+    return new Intl.Locale(tag).maximize().script;
+  } catch (error) {
+    if (error instanceof RangeError) return undefined;
+    throw error;
+  }
 }
 
 /**
  * Finds the supported locale that best matches one tag: exact (case-insensitive, after
  * canonicalizing both, so `en_us`, `EN-US` and `en-US` are the same), then the tag with trailing
  * subtags removed (`zh-Hant-TW` -> `zh-Hant` -> `zh`), then the first supported locale with the same
- * language (`pt` matches `pt-BR`). `-u-` and `-x-` extensions in the request are ignored once an
+ * language (`pt` matches `pt-BR`); when several share the language, one of the script the tag
+ * writes or implies comes first (`zh-TW` matches `zh-Hant` before `zh-Hans`). `-u-` and `-x-` extensions in the request are ignored once an
  * exact match with them fails (`ar-EG-u-nu-latn` matches `ar-EG`). A tag that is not valid BCP 47
  * matches only a supported entry with the same text, ignoring case. The empty string never matches.
  *

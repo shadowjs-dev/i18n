@@ -79,7 +79,9 @@ const WHERE: Readonly<Record<I18nFeatureName, readonly [string, string]>> = Obje
 export function featureMissing(name: I18nFeatureName, what: string): TypeError {
   const [exported, subpath] = WHERE[name];
   return new TypeError(
-    `[shadow-i18n] ${what} needs the ${exported} feature: import { ${exported} } from "@shadow-js/i18n/${subpath}" and pass createI18n({ features: [${exported}] }), or use createI18nFull from "@shadow-js/i18n/full".`,
+    __DEV__
+      ? `[shadow-i18n] ${what} needs the ${exported} feature: import { ${exported} } from "@shadow-js/i18n/${subpath}" and pass createI18n({ features: [${exported}] }), or use createI18nFull from "@shadow-js/i18n/full".`
+      : `I18N_FEATURE_2 ${exported}`,
   );
 }
 
@@ -101,7 +103,9 @@ export function collectFeatures(features: unknown): Plugs {
   if (features === undefined) return plugs;
   if (!Array.isArray(features)) {
     throw new TypeError(
-      "[shadow-i18n] the features option must be an array of features (for example [formatting]).",
+      __DEV__
+        ? "[shadow-i18n] the features option must be an array of features (for example [formatting])."
+        : "I18N_FEATURES",
     );
   }
   const seen = new Map<string, unknown>();
@@ -114,13 +118,17 @@ export function collectFeatures(features: unknown): Plugs {
       typeof Reflect.get(feature as object, "plug") !== "function"
     ) {
       throw new TypeError(
-        `[shadow-i18n] features[${index}] is not an i18n feature: pass formatting, localeRouting, persistence or detection from their @shadow-js/i18n subpaths.`,
+        __DEV__
+          ? `[shadow-i18n] features[${index}] is not an i18n feature: pass formatting, localeRouting, persistence or detection from their @shadow-js/i18n subpaths.`
+          : "I18N_FEATURE_1",
       );
     }
     const known = seen.get(name);
     if (known === feature) return;
     if (known !== undefined) {
-      throw new TypeError(`[shadow-i18n] two different "${name}" features were passed.`);
+      throw new TypeError(
+        __DEV__ ? `[shadow-i18n] two different "${name}" features were passed.` : "I18N_FEATURE_3",
+      );
     }
     seen.set(name, feature);
     slot(plugs, feature as I18nFeature);

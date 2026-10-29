@@ -65,6 +65,29 @@ function escapeText(text: string, inPlural: boolean, tags: boolean): string {
   return out;
 }
 
+/** A style as the parser reads it back: an apostrophe doubled, a run of braces quoted. */
+function quoteStyle(style: string): string {
+  let out = "";
+  let index = 0;
+  while (index < style.length) {
+    const character = style.charAt(index);
+    if (character === "'") {
+      out += "''";
+      index += 1;
+    } else if (character === "{" || character === "}") {
+      // The whole run of braces goes in one quote, so `'}'` never meets another quote.
+      let end = index;
+      while (style.charAt(end) === "{" || style.charAt(end) === "}") end += 1;
+      out += `'${style.slice(index, end)}'`;
+      index = end;
+    } else {
+      out += character;
+      index += 1;
+    }
+  }
+  return out;
+}
+
 function printCases(cases: readonly MessageCase[], inPlural: boolean, tags: boolean): string {
   return cases.map((c) => ` ${c.selector} {${printNodes(c.body, inPlural, tags)}}`).join("");
 }
@@ -85,7 +108,7 @@ function printNodes(nodes: readonly MessageNode[], inPlural: boolean, tags: bool
       case "number":
       case "date":
       case "time":
-        out += `{${node.name}, ${node.kind}${node.style === undefined ? "" : `, ${node.style}`}}`;
+        out += `{${node.name}, ${node.kind}${node.style === undefined ? "" : `, ${quoteStyle(node.style)}`}}`;
         break;
       case "plural":
         out += `{${node.name}, ${node.ordinal ? "selectordinal" : "plural"},${

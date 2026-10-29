@@ -74,6 +74,23 @@ export interface HeadTagsOptions<L extends string> {
 }
 
 /**
+ * The Open Graph spelling of a locale: the language, and the region after an underscore when there
+ * is one (`pt-BR` -> `pt_BR`, `zh-Hant-TW` -> `zh_TW`). Open Graph knows no script, variant or
+ * extension subtags, so a tag written with them (`zh_Hant-TW`) is not a locale it accepts.
+ */
+function openGraphLocale(tag: string): string {
+  const parts = tag.split(/[-_]/);
+  const language = (parts[0] ?? tag).toLowerCase();
+  for (let index = 1; index < parts.length; index += 1) {
+    const part = parts[index] ?? "";
+    // A singleton starts an extension: no region follows.
+    if (part.length === 1) break;
+    if (/^(?:[A-Za-z]{2}|[0-9]{3})$/.test(part)) return `${language}_${part.toUpperCase()}`;
+  }
+  return language;
+}
+
+/**
  * `hreflang` alternates, the canonical link and (optionally) Open Graph locales and the hydration
  * state, as head tags: one `<link rel="alternate">` per locale plus an `x-default` one for the
  * default locale, then the canonical link, then the `<meta>` tags. The URLs come from
@@ -119,18 +136,16 @@ export function i18nHeadTags<L extends string>(
     if (own !== undefined) tags.push({ tag: "link", props: { rel: "canonical", href: own.href } });
   }
   if (options.openGraph === true) {
-    const og = (tag: string): string => tag.replace("-", "_");
-    tags.push({
-      tag: "meta",
-      props: { property: "og:locale", content: og(canonicalTag(locale) ?? locale) },
-    });
+    const primary = openGraphLocale(canonicalTag(locale) ?? locale);
+    tags.push({ tag: "meta", props: { property: "og:locale", content: primary } });
+    // Two locales can share a language and a region (`zh-CN`, `zh-Hans-CN`): one alternate is enough.
+    const written = new Set([primary]);
     for (const other of i18n.locales) {
-      if (other !== locale) {
-        tags.push({
-          tag: "meta",
-          props: { property: "og:locale:alternate", content: og(canonicalTag(other) ?? other) },
-        });
-      }
+      if (other === locale) continue;
+      const content = openGraphLocale(canonicalTag(other) ?? other);
+      if (written.has(content)) continue;
+      written.add(content);
+      tags.push({ tag: "meta", props: { property: "og:locale:alternate", content } });
     }
   }
   if (options.state === true) {

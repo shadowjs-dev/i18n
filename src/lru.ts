@@ -19,7 +19,7 @@ export class BoundedCache<K, V> {
     if (!Number.isFinite(capacity)) {
       throw new I18nError(
         "INVALID_VALUE",
-        `a cache size must be a finite number, got ${capacity}.`,
+        __DEV__ ? `a cache size must be a finite number, got ${capacity}.` : "I18N_CACHE",
       );
     }
     this.#capacity = Math.max(1, Math.floor(capacity));

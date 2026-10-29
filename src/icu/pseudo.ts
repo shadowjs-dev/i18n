@@ -178,7 +178,11 @@ export function pseudoLocalize<M extends Messages>(catalog: M, options: PseudoOp
   const expansion = mode === "accented" && requested > 0 ? Math.min(requested, 10) : 0;
   const brackets = options.brackets === undefined ? (["[", "]"] as const) : options.brackets;
   const convert = (value: string | Messages, depth: number): string | Messages => {
-    if (depth > 32) throw new I18nError("INVALID_CATALOG", "the catalog is nested deeper than 32.");
+    if (depth > 32)
+      throw new I18nError(
+        "INVALID_CATALOG",
+        __DEV__ ? "the catalog is nested deeper than 32." : "I18N_CATALOG_2",
+      );
     if (typeof value === "string") {
       const body = printMessage(transform(parseMessage(value), mode, expansion));
       return brackets === false ? body : `${brackets[0]}${body}${brackets[1]}`;

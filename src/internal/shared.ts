@@ -70,13 +70,19 @@ export interface Shared<L extends string> {
  */
 export function catalogOf(module: unknown, locale: string): Messages {
   if (typeof module !== "object" || module === null) {
-    throw new I18nError("INVALID_CATALOG", `the loader for "${locale}" did not return an object.`);
+    throw new I18nError(
+      "INVALID_CATALOG",
+      __DEV__ ? `the loader for "${locale}" did not return an object.` : "I18N_LOADER_2",
+    );
   }
   const namespace = Reflect.get(module, Symbol.toStringTag) === "Module";
   if (namespace || isModuleShaped(module)) {
     const inner = Reflect.get(module, "default");
     if (typeof inner !== "object" || inner === null) {
-      throw new I18nError("INVALID_CATALOG", `the module for "${locale}" has no default export.`);
+      throw new I18nError(
+        "INVALID_CATALOG",
+        __DEV__ ? `the module for "${locale}" has no default export.` : "I18N_LOADER_1",
+      );
     }
     return inner as Messages;
   }
@@ -179,7 +185,9 @@ export function chainOf<L extends string>(shared: Shared<L>, locale: L): readonl
     shared.defaultLocale,
     shared.options.fallbackLocale,
   );
-  shared.chains.set(locale, built);
+  // `chain(locale)` takes any string at run time: only a declared locale is remembered, so a
+  // stream of made-up tags (from a URL, say) cannot grow the map.
+  if (shared.locales.includes(locale)) shared.chains.set(locale, built);
   return built;
 }
 
@@ -213,7 +221,9 @@ export function resolveLocale<L extends string>(shared: Shared<L>, requested: st
   if (matched === undefined) {
     throw new I18nError(
       "UNKNOWN_LOCALE",
-      `"${String(requested)}" is not one of the supported locales (${shared.locales.join(", ")}).`,
+      __DEV__
+        ? `"${String(requested)}" is not one of the supported locales (${shared.locales.join(", ")}).`
+        : "I18N_LOCALE",
     );
   }
   return matched;
@@ -308,12 +318,16 @@ export function loadLocale<L extends string>(shared: Shared<L>, locale: L): Prom
     return Promise.resolve();
   }
   shared.inflight += 1;
+  // `replaceCatalog` installs a new Map; `addMessages` writes into the one there. Comparing the Map tells them apart.
+  const before = shared.catalogs.get(locale);
   const task = (async (): Promise<void> => {
     try {
       const module = await untrack(() => loader());
       const flat = flattenCatalog(catalogOf(module, locale));
       if (shared.disposed) return;
       const existing = shared.catalogs.get(locale);
+      // A catalog replaced while this load was in flight is the whole truth: keys it dropped must not come back.
+      if (existing !== undefined && existing !== before && !shared.partial.has(locale)) return;
       if (existing !== undefined) {
         // `addMessages` ran while loading: loaded text is the base, additions win.
         for (const [key, text] of existing) flat.set(key, text);
@@ -377,7 +391,9 @@ export function compile<L extends string>(shared: Shared<L>, text: string): Comp
     );
   } else {
     try {
-      made = shared.options.compile(text);
+      // A user callback, and its result is cached for every reader: it must not subscribe the first one.
+      const compiler = shared.options.compile;
+      made = untrack(() => compiler(text));
     } catch (error) {
       if (!(error instanceof MessageSyntaxError)) throw error;
       made = error;

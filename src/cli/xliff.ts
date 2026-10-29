@@ -98,25 +98,42 @@ export function writeXliff(units: readonly TransUnit[], source: string, target: 
   return lines.join("\n");
 }
 
+/** Where the start tag that begins at `open` ends: the first `>` outside a quoted attribute value, or -1. */
+function tagEnd(xml: string, open: number): number {
+  let quote = "";
+  for (let index = open; index < xml.length; index += 1) {
+    const character = xml.charAt(index);
+    if (quote !== "") {
+      if (character === quote) quote = "";
+    } else if (character === '"' || character === "'") quote = character;
+    else if (character === ">") return index;
+  }
+  return -1;
+}
+
 /** The text between `<name ...>` and `</name>` starting at `from`, and where the element ended. */
 function elementAt(
   xml: string,
   name: string,
   from: number,
 ): { text: string; attributes: string; end: number } | undefined {
-  const open = xml.indexOf(`<${name}`, from);
-  if (open === -1) return undefined;
-  const afterName = xml.charAt(open + name.length + 1);
-  if (
-    afterName !== ">" &&
-    afterName !== " " &&
-    afterName !== "\n" &&
-    afterName !== "\t" &&
-    afterName !== "/"
-  ) {
-    return elementAt(xml, name, open + 1);
+  // A loop, not a recursive retry: a file that repeats `<sourcex` has as many misses as it likes.
+  let open = xml.indexOf(`<${name}`, from);
+  for (;;) {
+    if (open === -1) return undefined;
+    const afterName = xml.charAt(open + name.length + 1);
+    if (
+      afterName === ">" ||
+      afterName === " " ||
+      afterName === "\n" ||
+      afterName === "\t" ||
+      afterName === "/"
+    ) {
+      break;
+    }
+    open = xml.indexOf(`<${name}`, open + 1);
   }
-  const close = xml.indexOf(">", open);
+  const close = tagEnd(xml, open);
   if (close === -1) return undefined;
   const attributes = xml.slice(open + name.length + 1, close);
   if (attributes.endsWith("/"))

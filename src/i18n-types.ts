@@ -681,7 +681,8 @@ export interface I18nBase<L extends string = string> {
   /**
    * Replaces a locale's whole catalog with `messages` (hot reload of an edited catalog). Keys that
    * `messages` no longer has are removed. Readers of the locale rerun in place; components keep their
-   * state. The messages are the complete catalog: a lazy locale's loader is not run afterward.
+   * state. The messages are the complete catalog: a lazy locale's loader is not run afterward, and a load already in
+   * flight is discarded when it settles, so a key the new catalog dropped does not come back from it.
    * Does nothing after `dispose()`.
    *
    * @param locale A declared locale.

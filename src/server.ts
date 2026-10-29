@@ -435,7 +435,9 @@ export function getEventI18n<I extends I18nBase = I18nBase>(
   if (found === undefined) {
     throw new I18nError(
       "INVALID_STATE",
-      "no i18n instance on this request; add createI18nMiddleware() to the middleware list.",
+      __DEV__
+        ? "no i18n instance on this request; add createI18nMiddleware() to the middleware list."
+        : "I18N_NO_1",
     );
   }
   return found;

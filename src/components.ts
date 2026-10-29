@@ -184,7 +184,10 @@ export function useI18n<I extends I18nBase = RegisteredI18n>(): I {
   // In a Dusk request the middleware's instance is there without a provider.
   const request = currentRequestI18n();
   if (request !== undefined) return request as I;
-  throw new I18nError("INVALID_STATE", "useI18n() needs an <I18nProvider i18n={...}> above it.");
+  throw new I18nError(
+    "INVALID_STATE",
+    __DEV__ ? "useI18n() needs an <I18nProvider i18n={...}> above it." : "I18N_NO_2",
+  );
 }
 
 type TransArgs<S> = S extends string

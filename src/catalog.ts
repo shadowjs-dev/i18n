@@ -56,15 +56,24 @@ export function flattenCatalog(catalog: unknown): Map<string, string> {
     if (frame === undefined) break;
     const { value, path, depth } = frame;
     if (typeof value === "string") {
-      if (path === "") throw new I18nError("INVALID_CATALOG", "a catalog must be an object.");
+      if (path === "")
+        throw new I18nError(
+          "INVALID_CATALOG",
+          __DEV__ ? "a catalog must be an object." : "I18N_CATALOG_6",
+        );
       if (out.has(path)) {
-        throw new I18nError("INVALID_CATALOG", `the key "${path}" is defined twice.`);
+        throw new I18nError(
+          "INVALID_CATALOG",
+          __DEV__ ? `the key "${path}" is defined twice.` : "I18N_CATALOG_3",
+        );
       }
       out.set(path, value);
       if (out.size > CATALOG_LIMITS.maxKeys) {
         throw new I18nError(
           "INVALID_CATALOG",
-          `the catalog has more than ${CATALOG_LIMITS.maxKeys} messages.`,
+          __DEV__
+            ? `the catalog has more than ${CATALOG_LIMITS.maxKeys} messages.`
+            : "I18N_CATALOG_5",
         );
       }
       continue;
@@ -72,26 +81,34 @@ export function flattenCatalog(catalog: unknown): Map<string, string> {
     if (typeof value !== "object" || value === null || Array.isArray(value)) {
       throw new I18nError(
         "INVALID_CATALOG",
-        `"${path === "" ? "(root)" : path}" must be a string or an object, got ${
-          Array.isArray(value) ? "an array" : value === null ? "null" : typeof value
-        }.`,
+        __DEV__
+          ? `"${path === "" ? "(root)" : path}" must be a string or an object, got ${
+              Array.isArray(value) ? "an array" : value === null ? "null" : typeof value
+            }.`
+          : "I18N_CATALOG_7",
       );
     }
     if (depth >= CATALOG_LIMITS.maxDepth) {
       throw new I18nError(
         "INVALID_CATALOG",
-        `"${path}" is nested deeper than ${CATALOG_LIMITS.maxDepth}.`,
+        __DEV__ ? `"${path}" is nested deeper than ${CATALOG_LIMITS.maxDepth}.` : "I18N_CATALOG_2",
       );
     }
     // Reverse so that popping visits keys in their declared order (stable error messages).
     const keys = Object.keys(value).reverse();
     for (const key of keys) {
-      if (key === "") throw new I18nError("INVALID_CATALOG", `"${path}" has an empty key.`);
+      if (key === "")
+        throw new I18nError(
+          "INVALID_CATALOG",
+          __DEV__ ? `"${path}" has an empty key.` : "I18N_CATALOG_4",
+        );
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (descriptor === undefined || !("value" in descriptor)) {
         throw new I18nError(
           "INVALID_CATALOG",
-          `"${path === "" ? key : `${path}.${key}`}" is an accessor; catalogs hold plain data.`,
+          __DEV__
+            ? `"${path === "" ? key : `${path}.${key}`}" is an accessor; catalogs hold plain data.`
+            : "I18N_CATALOG_1",
         );
       }
       stack.push({

@@ -5,6 +5,7 @@
  * @packageDocumentation
  */
 
+import { untrack } from "@shadow-js/core";
 import { createI18n } from "./create-i18n";
 import { I18nError } from "./errors";
 import type { BaseCatalog, CatalogLoader, I18n, I18nOptions } from "./i18n-types";
@@ -118,7 +119,8 @@ export function createI18nWithIcu<
         "INVALID_CATALOG",
         `${issue.kind} [${issue.locale}] ${issue.key}: ${issue.detail}`,
       );
-      if (rest.onError !== undefined) rest.onError(error);
+      // A user callback: it must not subscribe whatever computation creates the instance.
+      if (rest.onError !== undefined) untrack(() => rest.onError?.(error));
       else console.warn(error.message);
     }
   }

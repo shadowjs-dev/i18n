@@ -318,10 +318,13 @@ function formatNodes(
       case "tag": {
         const inner = new Parts();
         formatNodes(run, node.children, inner, pound);
-        const handler =
+        const candidate: unknown =
           run.handlers !== undefined && Object.hasOwn(run.handlers, node.name)
             ? run.handlers[node.name]
             : undefined;
+        // `t.rich` passes the values as the handlers, so a plain value can sit under a tag's name:
+        // it is no handler, and calling it would throw out of the render.
+        const handler = typeof candidate === "function" ? (candidate as TagHandler) : undefined;
         if (handler === undefined) {
           if (run.rich) {
             ctx.report(
@@ -399,7 +402,8 @@ export function formatToString(
  * Formats a parsed message to a list of parts for rich text: strings, and whatever the tag handlers
  * returned. Each handler receives the already formatted parts between its tags and runs untracked.
  * Strings are always plain text, never markup, so pass the list to the renderer as children. A tag
- * without a handler reports `MISSING_TAG_HANDLER` and its content is kept without markup. Other
+ * without a handler (or whose entry in `handlers` is not a function) reports `MISSING_TAG_HANDLER`
+ * and its content is kept without markup. Other
  * problems are handled as in {@link formatToString}.
  *
  * @param nodes A parsed message, from {@link parseMessage}.

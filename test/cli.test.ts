@@ -96,6 +96,32 @@ describe("[I18N-CLI-02] catalogs and sources", () => {
     await expect(readCatalogs(join(root, "missing"))).rejects.toThrow(/cannot be read/);
   });
 
+  it("[I18N-R5-5] the catalogs have no prototype, so --base constructor is a missing locale, not Object's member", async () => {
+    await app();
+    const messages = join(root, "messages");
+    const catalogs = await readCatalogs(messages);
+    expect(Object.getPrototypeOf(catalogs)).toBeNull();
+    expect(catalogs["constructor"]).toBeUndefined();
+    expect(catalogs["toString"]).toBeUndefined();
+    await expect(
+      check({ messages, sources: [join(root, "src")], base: "constructor" }),
+    ).rejects.toThrow(/there is no constructor\.json/);
+    await expect(
+      exportXliff({ messages, base: "__proto__", locale: "fr", out: join(root, "out.xlf") }),
+    ).rejects.toThrow(/there is no __proto__\.json/);
+    await exportXliff({ messages, base: "en", locale: "toString", out: join(root, "ts.xlf") });
+    const units = readXliff(await readFile(join(root, "ts.xlf"), "utf8")).units;
+    expect(units.every((unit) => unit.target === undefined)).toBe(true);
+    await expect(
+      importXliff({
+        messages,
+        base: "constructor",
+        locale: "fr",
+        from: join(root, "ts.xlf"),
+      }),
+    ).rejects.toThrow(/there is no constructor\.json/);
+  });
+
   it("scans source folders, skipping dependencies, build output and declaration files", async () => {
     await put("src/a.ts", 't("one")');
     await put("src/deep/b.tsx", '<Trans key="two" />');

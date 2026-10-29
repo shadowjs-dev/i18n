@@ -1,6 +1,6 @@
 {
   "name": "@shadow-js/i18n",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Typed translations with ICU messages, lazy catalogs and server rendering that hydrates cleanly",
   "license": "MIT",
   "type": "module",
@@ -75,17 +75,18 @@
     "check": "npm run lint && npm run typecheck && npm run build && npm test && npm run test:perf && npm run test:gc"
   },
   "peerDependencies": {
-    "@shadow-js/core": "^1.0.1"
+    "@shadow-js/core": "^1.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
-    "@shadow-js/compiler": "^1.0.1",
-    "@shadow-js/core": "^1.0.1",
+    "@shadow-js/compiler": "^1.0.2",
+    "@shadow-js/core": "^1.0.2",
     "@shadow-js/router": "*",
-    "@shadow-js/testing": "^1.0.1",
-    "@shadow-js/web": "^1.0.1",
+    "@shadow-js/testing": "^1.0.2",
+    "@shadow-js/web": "^1.0.2",
     "@testing-library/dom": "10.4.2",
     "@types/node": "^24.0.0",
+    "esbuild": "0.27.0",
     "fast-check": "^4.10.2",
     "happy-dom": "^21.0.3",
     "tsdown": "0.23.0",

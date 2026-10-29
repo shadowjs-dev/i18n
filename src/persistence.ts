@@ -5,6 +5,7 @@
  * it, and the strategy code is not bundled.
  * @packageDocumentation
  */
+import { untrack } from "@shadow-js/core";
 import { I18nError } from "./errors";
 import type { I18nFeature, PersistSpec } from "./i18n-types";
 import type { ResolvedPersistence } from "./internal/features";
@@ -79,7 +80,8 @@ function resolvePersistence(
       for (const strategy of strategies) {
         let value: string | undefined;
         try {
-          value = strategy.read();
+          // A user callback: `setLocale` may be called inside a computation, which must not subscribe to what it reads.
+          value = untrack(() => strategy.read());
         } catch (error) {
           report(failure("read", error));
           continue;
@@ -91,7 +93,7 @@ function resolvePersistence(
     write(locale) {
       for (const strategy of strategies) {
         try {
-          strategy.write(locale);
+          untrack(() => strategy.write(locale));
         } catch (error) {
           report(failure("write", error));
         }

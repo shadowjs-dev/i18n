@@ -26,6 +26,20 @@ const UNIT_SECONDS: ReadonlyMap<string, number> = new Map([
   ["year", 31_557_600],
 ]);
 
+/** The units a distance can choose, smallest first (a quarter is only ever asked for). */
+const AUTO_UNITS = ["second", "minute", "hour", "day", "week", "month", "year"] as const;
+
+/** The unit for a distance in seconds, chosen after rounding: 59.6 s is "1 minute", not "60 seconds". */
+function autoUnit(abs: number): string {
+  let unit: string = AUTO_UNITS[0];
+  for (const next of AUTO_UNITS.slice(1)) {
+    const below = UNIT_SECONDS.get(unit) ?? 1;
+    if (Math.round(abs / below) * below < (UNIT_SECONDS.get(next) ?? 1)) break;
+    unit = next;
+  }
+  return unit;
+}
+
 /** A short, single-line description of a bad argument for a report: `"abc"`, `null`, `NaN`, `an object`. */
 function describe(value: unknown): string {
   if (typeof value === "string") {
@@ -195,20 +209,7 @@ export function createFormatters<L extends string>(
         );
       }
     }
-    bare ??=
-      abs < 60
-        ? "second"
-        : abs < 3600
-          ? "minute"
-          : abs < 86_400
-            ? "hour"
-            : abs < 604_800
-              ? "day"
-              : abs < 2_629_800
-                ? "week"
-                : abs < 31_557_600
-                  ? "month"
-                  : "year";
+    bare ??= autoUnit(abs);
     const size = UNIT_SECONDS.get(bare) ?? 1;
     // Half rounds away from zero, so "in 2 minutes" and "2 minutes ago" are mirror images. A past
     // time that rounds to nothing stays -0, which `Intl` words as "0 minutes ago".

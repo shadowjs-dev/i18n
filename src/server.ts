@@ -333,7 +333,11 @@ export function createI18nMiddleware<L extends string, I extends I18nBase<L>>(
         cookieName,
         ...(routing === undefined
           ? {}
-          : { routing, unprefixedIsDefault: routing.prefix === "as-needed" }),
+          : {
+              routing,
+              // The root negotiates (cookie, languages) like the browser's first detection, or hydration would flip.
+              unprefixedIsDefault: routing.prefix === "as-needed" && pathname !== "/",
+            }),
       },
     );
     const locale = found?.locale ?? i18n.defaultLocale;

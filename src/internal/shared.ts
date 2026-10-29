@@ -320,6 +320,7 @@ export function loadLocale<L extends string>(shared: Shared<L>, locale: L): Prom
   shared.inflight += 1;
   // `replaceCatalog` installs a new Map; `addMessages` writes into the one there. Comparing the Map tells them apart.
   const before = shared.catalogs.get(locale);
+  let settled = false;
   const task = (async (): Promise<void> => {
     try {
       const module = await untrack(() => loader());
@@ -347,13 +348,16 @@ export function loadLocale<L extends string>(shared: Shared<L>, locale: L): Prom
             { cause: error },
           );
     } finally {
+      settled = true;
       shared.loading.delete(locale);
       shared.inflight -= 1;
       // Once no load is in flight, every Suspense boundary that waits on a catalog goes.
       if (shared.inflight === 0) releaseHolders(shared);
     }
   })();
-  shared.loading.set(locale, task);
+  // A loader that throws before its first await settles the task inside the call above, so its `finally` ran before this
+  // entry existed: a rejected promise left here would answer every retry without calling the loader again.
+  if (!settled) shared.loading.set(locale, task);
   return task;
 }
 

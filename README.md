@@ -393,7 +393,7 @@ The message reads `[shadow-i18n INVALID_STATE] I18N_STATE_1`: the first word is 
 ## Dependencies
 
 - Runtime: none.
-- Peers: `@shadow-js/core` `^1.0.0`: reactive locale state.
+- Peers: `@shadow-js/core` `^1.0.3`: reactive locale state.
 
 ## Types
 
